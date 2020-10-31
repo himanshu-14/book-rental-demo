@@ -4,13 +4,15 @@
   "description": "a book rental app",
   "main": "server/server.js",
   "scripts": {
-    "test": "mocha test/**/*.js"
+    "test": "mocha test/**/*.js",
+    "start": "nodemon -w server"
   },
   "author": "himanshu",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
+    "eslint": "^7.12.1",
     "express": "^4.17.1",
     "pg": "^8.4.1"
   }
