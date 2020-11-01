@@ -4,7 +4,7 @@
   "description": "a book rental app",
   "main": "server/server.js",
   "scripts": {
-    "test": "mocha test/**/*.js",
+    "test": "mocha test/**/*.test.js",
     "start": "nodemon -w server"
   },
   "author": "himanshu",
@@ -15,5 +15,9 @@
     "eslint": "^7.12.1",
     "express": "^4.17.1",
     "pg": "^8.4.1"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.2.0"
   }
 }

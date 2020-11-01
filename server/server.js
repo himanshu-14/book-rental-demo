@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const db = require("./dbConnection");
+const { getTodaysDate, createInClauseArg } = require("./utils");
 
 //Express app instance called app
 
@@ -36,52 +37,60 @@ app.post("/api/rentbooks", async (req, res) => {
         let { cust_id, book_copies } = req.body;
         //don't need to validate cust_id is correct and book copy ids are correct because of foreign key constraint
         //validating as if backend can be called from postman and needs to be able to maintain the consistency of the database
-
-        //remove duplicates from list of book copy ids in array book_copies to be issued
+        cust_id = parseInt(cust_id); //for security against sql injection
         book_copies = [...new Set(book_copies)];
-        cust_id = parseInt(cust_id);
-        let inClauseArg = "(";
-        for (let i = 0; i < book_copies.length; i++) {
-            inClauseArg += parseInt(book_copies[i]); //for security against sql injection
-            if (i === book_copies.length - 1) inClauseArg += ")";
-            else inClauseArg += ", ";
-        }
+        //remove duplicates from list of book copy ids in array book_copies to be issued
+        let inClauseArg = createInClauseArg(book_copies);
         console.log(inClauseArg);
 
-        //santized inClauseArg through parseInt
+        //check if any of the books has been issued already
         const dbRes = await db.query(
             `SELECT book_copy_id,book_copy_status FROM book_copies where book_copy_id IN ${inClauseArg}`
         );
 
         let alreadyIssued = false;
         let firstErrorBookCopyId = 0;
-        dbRes.rows.forEach((bookCopy) => {
-            if (bookCopy.book_copy_staus === 0) {
+        for (let i = 0; i < dbRes.rows.length; i++) {
+            let bookCopy = dbRes.rows[i];
+            if (bookCopy.book_copy_status === 0) {
                 alreadyIssued = true;
                 firstErrorBookCopyId = bookCopy.book_copy_id;
+                break;
             }
-        });
+        }
         if (alreadyIssued) {
             res.status(400).json({
                 errorMessage: `${firstErrorBookCopyId} has already been issued. No transaction has been performed. Rectify payload and try again`,
             });
             return;
         }
-
+        //if all the books are available for issuing
         let queryPromiseArray = [];
         //fire all the queries to the db at once
         for (let i = 0; i < book_copies.length; i++) {
-            let queryPromise = db.query(
-                "INSERT INTO transactions(trans_cust_id,trans_book_copy_id,issue_date,trans_status) VALUES($1,$2,$3,$4)",
+            let transactionAdded = db.query(
+                "INSERT INTO transactions(trans_cust_id,trans_book_copy_id,issue_date,trans_status) VALUES ($1,$2,$3,$4)",
                 [cust_id, book_copies[i], getTodaysDate(), 1]
+            );
+            let bookCopyTableUpdated = db.query(
+                "UPDATE book_copies SET book_copy_status=0 where book_copy_id = $1",
+                [book_copies[i]]
+            );
+            let customerTableUpdated = db.query(
+                "UPDATE customers SET num_rented=num_rented+1 where cust_id = $1",
+                [cust_id]
             );
             //trans_id will be auto allotted
             //return date would be null
             //charges would be null
             //we are giving
-            queryPromiseArray.push(queryPromise);
+            queryPromiseArray.push(
+                transactionAdded,
+                bookCopyTableUpdated,
+                customerTableUpdated
+            );
         }
-        let queryResults = await Promise.all(queryPromiseArray);
+        let queryResults = await Promise.all(queryPromiseArray); //wait till all the transactions are completed
         console.log(JSON.stringify(queryResults));
         res.json({
             successMessage: `Given book_copies have been issued to ${cust_id}`,
@@ -90,17 +99,6 @@ app.post("/api/rentbooks", async (req, res) => {
         res.json(err);
     }
 });
-/**
- * to get today's date in the format of DATE datatype of Postrgres
- */
-function getTodaysDate() {
-    let today = new Date();
-    return (
-        today.getFullYear() +
-        "-" +
-        (today.getMonth() + 1).toString().padStart(2, "0") +
-        "-" +
-        today.getDate().toString().padStart(2, "0")
-    );
-}
+
 //command to run nodemon -w server
+//or npm start
