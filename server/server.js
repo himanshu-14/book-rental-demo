@@ -3,7 +3,11 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const db = require("./dbConnection");
-const { getTodaysDateString, createInClauseArg } = require("./utils");
+const {
+    getTodaysDateString,
+    createInClauseArg,
+    calcCharges
+} = require("./utils");
 //Express app instance called app
 
 //middleware
@@ -138,10 +142,11 @@ async function findChargesAndUpdateTables(bookCopyId) {
     let {
         rows
     } = await db.query(
-        "SELECT book_copy_id,issue_date,trans_cust_id,book_id,title,category_id,category_perday_cost FROM (SELECT * FROM (SELECT * FROM transactions INNER JOIN book_copies ON trans_book_copy_id=book_copy_id WHERE trans_book_copy_id=$1 AND trans_status=1 AND book_copy_status=0) tbc INNER JOIN books ON book_copy_book_id=book_id) tbcb INNER JOIN categories ON book_category_id=category_id;",
+        "SELECT book_copy_id,issue_date,trans_cust_id,book_id,title,category_id,category_perday_cost,category_days_limit,category_min_charges FROM (SELECT * FROM (SELECT * FROM transactions INNER JOIN book_copies ON trans_book_copy_id=book_copy_id WHERE trans_book_copy_id=$1 AND trans_status=1 AND book_copy_status=0) tbc INNER JOIN books ON book_copy_book_id=book_id) tbcb INNER JOIN categories ON book_category_id=category_id;",
         [bookCopyId]
     );
     console.log(`Request to find cust_id charges resolved ${bookCopyId}`);
+
     let bookCopyTableUpdated = db.query(
         "UPDATE book_copies SET book_copy_status=1 where book_copy_id = $1",
         [bookCopyId]
@@ -154,8 +159,11 @@ async function findChargesAndUpdateTables(bookCopyId) {
     let days = parseInt(
         (new Date(returnDateString) - trans.issue_date) / 86400000
     );
-    let charges = days * parseInt(trans.category_perday_cost); //stored in paisa
-    console.log(`charges calculated for ${bookCopyId}` + charges);
+    let charges = calcCharges(days, trans); //stored in paisa
+    console.log(
+        `charges calculated for book_copy_id ${bookCopyId} for category ${trans.category_id}` +
+            charges
+    );
 
     let customerTableUpdated = db.query(
         "UPDATE customers SET num_rented=num_rented-1 where cust_id = $1",
@@ -177,6 +185,5 @@ async function findChargesAndUpdateTables(bookCopyId) {
     //need to wait for these promises to be resolved before resolving overall findChargesAndUpdateTables promise
     return transactionTableUpdateResults.rows[0];
 }
-
 //command to run nodemon -w server
 //or npm start

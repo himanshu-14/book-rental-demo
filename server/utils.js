@@ -22,5 +22,18 @@ function createInClauseArg(book_copies) {
     }
     return inClauseArg;
 }
+
+function calcCharges(days, trans) {
+    let daysExceeding = days - trans.category_days_limit;
+    console.log(daysExceeding);
+    let charges =
+        parseFloat(trans.category_min_charges) +
+        (daysExceeding > 0
+            ? daysExceeding * parseFloat(trans.category_perday_cost)
+            : 0);
+    console.log(charges);
+    return charges;
+}
+exports.calcCharges = calcCharges;
 exports.getTodaysDateString = getTodaysDateString;
 exports.createInClauseArg = createInClauseArg;

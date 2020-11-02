@@ -40,4 +40,5 @@ npm start
 
 ## Upcoming:
 1) DB Design Doc with Diagram
-2) Minimum charges for particular number of days for each category
+2) Complete UI (Currently UI just has search feature) and only API exposed provides issue and return features
+
