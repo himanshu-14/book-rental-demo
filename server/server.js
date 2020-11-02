@@ -134,34 +134,46 @@ app.post("/api/returnBooks", async (req, res) => {
 });
 
 async function findChargesAndUpdateTables(bookCopyId) {
+    //finding the charges for returning a book based on its category per day cost
+    let {
+        rows
+    } = await db.query(
+        "SELECT book_copy_id,issue_date,trans_cust_id,book_id,title,category_id,category_perday_cost FROM (SELECT * FROM (SELECT * FROM transactions INNER JOIN book_copies ON trans_book_copy_id=book_copy_id WHERE trans_book_copy_id=$1 AND trans_status=1 AND book_copy_status=0) tbc INNER JOIN books ON book_copy_book_id=book_id) tbcb INNER JOIN categories ON book_category_id=category_id;",
+        [bookCopyId]
+    );
+    console.log(`Request to find cust_id charges resolved ${bookCopyId}`);
     let bookCopyTableUpdated = db.query(
         "UPDATE book_copies SET book_copy_status=1 where book_copy_id = $1",
         [bookCopyId]
     );
-    let {
-        rows
-    } = await db.query(
-        "SELECT * FROM transactions WHERE trans_book_copy_id=$1 AND trans_status=1",
-        [bookCopyId]
-    );
+    console.log(`book copy table update request sent ${bookCopyId}`);
+
     let trans = rows[0];
     let returnDateString = getTodaysDateString();
     console.log(JSON.stringify(trans.issue_date));
     let days = parseInt(
         (new Date(returnDateString) - trans.issue_date) / 86400000
     );
+    let charges = days * parseInt(trans.category_perday_cost); //stored in paisa
+    console.log(`charges calculated for ${bookCopyId}` + charges);
 
-    let charges = days * 100; //stored in paisa
     let customerTableUpdated = db.query(
         "UPDATE customers SET num_rented=num_rented-1 where cust_id = $1",
         [trans.trans_cust_id]
     );
+    console.log(
+        `customers table update request sent book_copy_id ${bookCopyId} cust_id ${trans.trans_cust_id}`
+    );
+
     let transactionTableUpdateResults = await db.query(
         "UPDATE transactions SET trans_status=0 ,return_date=$1,charges=$2 WHERE trans_book_copy_id=$3 AND trans_status=1 RETURNING *",
         [returnDateString, charges, bookCopyId]
     );
+    console.log(`transactions table updated ${bookCopyId}`);
     await customerTableUpdated;
+    console.log(`customers table updated ${bookCopyId}`);
     await bookCopyTableUpdated;
+    console.log(`book copy table updated ${bookCopyId}`);
     //need to wait for these promises to be resolved before resolving overall findChargesAndUpdateTables promise
     return transactionTableUpdateResults.rows[0];
 }
