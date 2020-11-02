@@ -16,9 +16,9 @@ select * from transactions tr INNER JOIN book_copies bc ON trans_book_copy_id=bo
 update transactions set trans_status=0,charges=5 where trans_book_copy_id=1;
 
 
-select * from transactions;
-select * from book_copies;
-select * from customers;
+select * from transactions order by trans_id;
+select * from book_copies ORDER BY book_copy_id;
+select * from customers ORDER BY cust_id;
 
 UPDATE transactions SET trans_status=1 ,return_date=NULL,charges=NULL WHERE trans_book_copy_id=1  RETURNING *;
 

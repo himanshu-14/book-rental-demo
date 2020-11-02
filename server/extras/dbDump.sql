@@ -5,7 +5,7 @@
 -- Dumped from database version 13.0
 -- Dumped by pg_dump version 13.0
 
--- Started on 2020-11-02 19:32:14
+-- Started on 2020-11-02 23:40:07
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -197,7 +197,9 @@ ALTER SEQUENCE public.book_copies_book_copy_id_seq OWNED BY public.book_copies.b
 CREATE TABLE public.categories (
     category_id integer NOT NULL,
     category_name character varying(50) NOT NULL,
-    category_perday_cost bigint NOT NULL
+    category_perday_cost bigint NOT NULL,
+    category_days_limit integer,
+    category_min_charges bigint
 );
 
 
@@ -319,8 +321,8 @@ ALTER TABLE ONLY public.transactions ALTER COLUMN trans_id SET DEFAULT nextval('
 --
 
 INSERT INTO public.book_copies (book_copy_id, book_copy_status, book_copy_book_id) VALUES (3, 1, 3);
-INSERT INTO public.book_copies (book_copy_id, book_copy_status, book_copy_book_id) VALUES (1, 1, 1);
 INSERT INTO public.book_copies (book_copy_id, book_copy_status, book_copy_book_id) VALUES (2, 1, 2);
+INSERT INTO public.book_copies (book_copy_id, book_copy_status, book_copy_book_id) VALUES (1, 1, 1);
 INSERT INTO public.book_copies (book_copy_id, book_copy_status, book_copy_book_id) VALUES (4, 1, 4);
 
 
@@ -342,9 +344,9 @@ INSERT INTO public.books (book_id, author, publisher, title, total_num_copies, y
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.categories (category_id, category_name, category_perday_cost) VALUES (1, 'Regular', 150);
-INSERT INTO public.categories (category_id, category_name, category_perday_cost) VALUES (2, 'Fiction', 300);
-INSERT INTO public.categories (category_id, category_name, category_perday_cost) VALUES (3, 'Novels', 150);
+INSERT INTO public.categories (category_id, category_name, category_perday_cost, category_days_limit, category_min_charges) VALUES (1, 'Regular', 150, 2, 200);
+INSERT INTO public.categories (category_id, category_name, category_perday_cost, category_days_limit, category_min_charges) VALUES (2, 'Fiction', 300, 0, 0);
+INSERT INTO public.categories (category_id, category_name, category_perday_cost, category_days_limit, category_min_charges) VALUES (3, 'Novels', 150, 3, 450);
 
 
 --
@@ -373,6 +375,9 @@ INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, is
 INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, issue_date, return_date, trans_status, charges) VALUES (15, 1, 4, '2020-11-02', '2020-11-02', 0, 0);
 INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, issue_date, return_date, trans_status, charges) VALUES (14, 1, 1, '2020-11-02', '2020-11-02', 0, 0);
 INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, issue_date, return_date, trans_status, charges) VALUES (16, 1, 2, '2020-11-02', '2020-11-02', 0, 0);
+INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, issue_date, return_date, trans_status, charges) VALUES (19, 1, 2, '2020-11-02', '2020-11-02', 0, 450);
+INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, issue_date, return_date, trans_status, charges) VALUES (17, 1, 1, '2020-11-02', '2020-11-02', 0, 0);
+INSERT INTO public.transactions (trans_id, trans_cust_id, trans_book_copy_id, issue_date, return_date, trans_status, charges) VALUES (18, 1, 4, '2020-11-02', '2020-11-02', 0, 200);
 
 
 --
@@ -390,7 +395,7 @@ SELECT pg_catalog.setval('public."BOOK_ book_id_seq"', 5, true);
 -- Name: TRANSACTIONS_trans_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public."TRANSACTIONS_trans_id_seq"', 16, true);
+SELECT pg_catalog.setval('public."TRANSACTIONS_trans_id_seq"', 19, true);
 
 
 --
@@ -492,7 +497,7 @@ ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT trans_cust_id_fk FOREIGN KEY (trans_cust_id) REFERENCES public.customers(cust_id) NOT VALID;
 
 
--- Completed on 2020-11-02 19:32:15
+-- Completed on 2020-11-02 23:40:07
 
 --
 -- PostgreSQL database dump complete
