@@ -6,7 +6,7 @@ const Book=(props)=>{
             <td>{props.book.author}</td>
             <td>{props.book.year_released}</td>
             <td>{props.book.publisher}</td>
-    
+            <td>{props.book.num_copies}</td>
     </tr>)
     ;
 }

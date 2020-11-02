@@ -52,16 +52,14 @@ class SearchComponent extends Component {
 
     render() {
         return (
-            <div className="container">
-                <h1>Seach for Books</h1>
-                {////SearchBox is a controlled component
-                }
+            <div className="container mt-3 text-center">
+                <h2>Search for Books</h2>
                 <SearchBox buttonClickHandler={this.buttonClickHandler} textChangeHandler={this.textChangeHandler} queryText={this.state.queryText} searchCriteria={this.state.searchCriteria} radioButtonHandler={this.radioButtonHandler}/>
                 <div className="container">
-                    <h1>Results</h1>
+                    <h2>Results</h2>
                     {(this.state.rows.length > 0) ?
                         (
-                            <table><thead><tr><td>Book ID</td><td>Title</td><td>Author</td><td>Released in Year</td><td>Publisher</td></tr></thead><tbody>
+                            <table className="table"><thead><tr><td>Book ID</td><td>Title</td><td>Author</td><td>Released in Year</td><td>Publisher</td><td>Number Of Copies</td></tr></thead><tbody>
                                 {
                                     this.state.rows.map((row) => {
                                         return <Book book={row} key={row.book_id} />
